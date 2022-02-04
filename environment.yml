@@ -1,0 +1,30 @@
+name: recommandation-systems
+channels:
+  - pytorch
+  - defaults
+  - conda-forge
+dependencies:
+  - graphviz
+  - ipython
+  - jupyter
+  - jupyterlab
+  - matplotlib
+  - networkx
+  - nltk
+  - numpy
+  - pandas
+  - pillow
+  - pytest
+  - pytest-cov
+  - pytest-xdist
+  - python=3.8.6
+  - pytorch=1.6.0
+  - scikit-learn
+  - scipy
+  - torchtext
+  - torchvision
+  - tqdm
+  - pip
+  - pip:
+    - h5py
+    - torchviz
