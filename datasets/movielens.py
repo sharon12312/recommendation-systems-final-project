@@ -14,7 +14,7 @@ from utils.transport import get_data
 from utils.interactions import Interactions
 
 VARIANTS = ('100K', '1M', '10M')
-URL_PREFIX = 'https://github.com/sharon12312/recommender_datasets/releases/download'
+URL_PREFIX = 'https://github.com/sharon12312/recommender-datasets/releases/download'
 VERSION = '0.1.0'  # the latest tag
 
 

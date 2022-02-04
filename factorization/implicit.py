@@ -9,7 +9,7 @@ import torch.optim as optim
 from utils.helpers import _repr_model
 from model_utils.components import predict_process_ids
 from model_utils.losses import adaptive_hinge_loss, bpr_loss, hinge_loss, pointwise_loss
-from model_utils.representations import BilinearNet
+from model_utils.networks import Net
 from model_utils.sampling import sample_items
 from model_utils.torch_utils import cpu, gpu, minibatch, set_seed, shuffle
 
@@ -82,10 +82,7 @@ class ImplicitFactorizationModel(object):
                  random_state=None,
                  num_negative_samples=5):
 
-        assert loss in ('pointwise',
-                        'bpr',
-                        'hinge',
-                        'adaptive_hinge')
+        assert loss in ('pointwise', 'bpr', 'hinge', 'adaptive_hinge')
 
         self._loss = loss
         self._embedding_dim = embedding_dim
@@ -124,7 +121,7 @@ class ImplicitFactorizationModel(object):
         if self._representation is not None:
             self._net = gpu(self._representation, self._use_cuda)
         else:
-            self._net = gpu(BilinearNet(self._num_users, self._num_items, self._embedding_dim, sparse=self._sparse), self._use_cuda)
+            self._net = gpu(Net(self._num_users, self._num_items, self._embedding_dim, sparse=self._sparse), self._use_cuda)
 
         if self._optimizer_func is None:
             self._optimizer = optim.Adam(

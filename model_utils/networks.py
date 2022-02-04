@@ -7,7 +7,7 @@ import torch.nn as nn
 from model_utils.layers import ScaledEmbedding, ZeroEmbedding
 
 
-class BilinearNet(nn.Module):
+class Net(nn.Module):
     """
     Bilinear factorization representation.
 
@@ -37,7 +37,7 @@ class BilinearNet(nn.Module):
 
     def __init__(self, num_users, num_items, embedding_dim=32, user_embedding_layer=None, item_embedding_layer=None, sparse=False):
 
-        super(BilinearNet, self).__init__()
+        super(Net, self).__init__()
 
         self.embedding_dim = embedding_dim
 

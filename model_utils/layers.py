@@ -7,6 +7,7 @@ import torch
 import torch.nn as nn
 
 from sklearn.utils import murmurhash3_32
+from xxhash import xxh32
 
 
 SEEDS = [
@@ -17,6 +18,7 @@ SEEDS = [
     179425019, 179425559, 179426029, 179426491,
     179425027, 179425579, 179426081, 179426549
 ]
+HASH_FUNCTIONS = ['MurmurHash', 'xxHash']
 
 
 class ScaledEmbedding(nn.Embedding):
@@ -134,7 +136,8 @@ class BloomEmbedding(nn.Module):
                  compression_ratio=0.2,
                  num_hash_functions=4,
                  bag=False,
-                 padding_idx=0):
+                 padding_idx=0,
+                 hash_function='MurmurHash'):
 
         super(BloomEmbedding, self).__init__()
 
@@ -148,8 +151,9 @@ class BloomEmbedding(nn.Module):
         self._bag = bag
 
         if num_hash_functions > len(SEEDS):
-            raise ValueError('Can use at most {} hash functions ({} requested)'
-                             .format(len(SEEDS), num_hash_functions))
+            raise ValueError(f'Can use at most {len(SEEDS)} hash functions ({num_hash_functions} requested)')
+        if hash_function not in HASH_FUNCTIONS:
+            raise ValueError(f'Cannot use Hash function: {hash_function}')
 
         self._masks = SEEDS[:self.num_hash_functions]
 
@@ -163,14 +167,17 @@ class BloomEmbedding(nn.Module):
         self._hashes = None
         self._offsets = None
 
+        # Hash Function Declaration
+        self._hash_function = self._get_hash_function(hash_function)
+
     def __repr__(self):
         return f'<BloomEmbedding (compression_ratio: {self.compression_ratio}): {self.embeddings}>'
 
     def _get_hashed_indices(self, original_indices):
 
         def _hash(x, seed):
-            # TODO - use different hash functions
-            result = murmurhash3_32(x, seed=seed)
+            # can use different hash functions
+            result = self._hash_function(x, seed=seed)
             result[self.padding_idx] = 0
 
             return result % self.compressed_num_embeddings
@@ -223,3 +230,12 @@ class BloomEmbedding(nn.Module):
             embedding = embedding.view(batch_size, seq_size, -1)
 
         return embedding
+
+    @staticmethod
+    def _get_hash_function(hash_function):
+        if hash_function == 'MurmurHash':
+            return murmurhash3_32
+        elif hash_function == 'xxHash':
+            return xxh32
+
+        return None

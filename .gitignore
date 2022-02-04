@@ -22,4 +22,4 @@
 tags
 
 # MovieLens data directory
-data
+**/data/*
