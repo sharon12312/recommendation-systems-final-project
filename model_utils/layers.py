@@ -6,6 +6,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 
+from hashlib import md5, sha1, sha256
 from sklearn.utils import murmurhash3_32
 from xxhash import xxh32
 
@@ -17,7 +18,7 @@ SEEDS = [
     179425019, 179425559, 179426029, 179426491,
     179425027, 179425579, 179426081, 179426549
 ]
-HASH_FUNCTIONS = ['MurmurHash', 'xxHash']
+HASH_FUNCTIONS = ['MurmurHash', 'xxHash', 'MD5', 'SHA1', 'SHA256']
 
 
 class ScaledEmbedding(nn.Embedding):
@@ -56,21 +57,6 @@ class ZeroEmbedding(nn.Embedding):
             self.weight.data[self.padding_idx].fill_(0)
 
 
-class ScaledEmbeddingBag(nn.EmbeddingBag):
-    """
-    EmbeddingBag layer that initialises its values
-    to using a normal variable scaled by the inverse
-    of the embedding dimension.
-    """
-
-    def reset_parameters(self):
-        """
-        Initialize parameters.
-        """
-
-        self.weight.data.normal_(0, 1.0 / self.embedding_dim)
-
-
 class BloomEmbedding(nn.Module):
     """
     An embedding layer that compresses the number of embedding
@@ -90,10 +76,6 @@ class BloomEmbedding(nn.Module):
         in the layer.
     num_hash_functions: int, optional
         Number of hash functions used to compute the bloom filter indices.
-    bag: bool, optional
-        Whether to use the ``EmbeddingBag`` layer for the underlying embedding.
-        This should be faster in principle, but currently seems to perform
-        very poorly.
 
     Notes
     -----
@@ -134,7 +116,6 @@ class BloomEmbedding(nn.Module):
     def __init__(self, num_embeddings, embedding_dim,
                  compression_ratio=0.2,
                  num_hash_functions=4,
-                 bag=False,
                  padding_idx=0,
                  hash_function='MurmurHash'):
 
@@ -146,7 +127,6 @@ class BloomEmbedding(nn.Module):
         self.compressed_num_embeddings = int(compression_ratio * num_embeddings)
         self.num_hash_functions = num_hash_functions
         self.padding_idx = padding_idx
-        self._bag = bag
 
         if num_hash_functions > len(SEEDS):
             raise ValueError(f'Can use at most {len(SEEDS)} hash functions ({num_hash_functions} requested)')
@@ -155,17 +135,14 @@ class BloomEmbedding(nn.Module):
 
         self._masks = SEEDS[:self.num_hash_functions]
 
-        if self._bag:
-            self.embeddings = ScaledEmbeddingBag(self.compressed_num_embeddings, self.embedding_dim, mode='sum')
-        else:
-            self.embeddings = ScaledEmbedding(self.compressed_num_embeddings, self.embedding_dim, padding_idx=self.padding_idx)
+        self.embeddings = ScaledEmbedding(self.compressed_num_embeddings, self.embedding_dim, padding_idx=self.padding_idx)
 
         # Hash cache. We pre-hash all the indices, and then just map the
         # indices to their pre-hashed values as we go through the minibatches.
         self._hashes = None
         self._offsets = None
 
-        # Hash Function Declaration
+        # Initialize hash function name
         self._hash_function = hash_function
 
     def __repr__(self):
@@ -210,22 +187,10 @@ class BloomEmbedding(nn.Module):
             indices = indices.contiguous()
 
         indices = indices.data.view(batch_size * seq_size, 1)
-
-        if self._bag:
-            if self._offsets is None or self._offsets.size(0) != (batch_size * seq_size):
-                self._offsets = torch.arange(0, indices.numel(), indices.size(1)).long()
-
-                if indices.is_cuda:
-                    self._offsets = self._offsets.cuda()
-
-            hashed_indices = self._get_hashed_indices(indices)
-            embedding = self.embeddings(hashed_indices.view(-1), self._offsets)
-            embedding = embedding.view(batch_size, seq_size, -1)
-        else:
-            hashed_indices = self._get_hashed_indices(indices)
-            embedding = self.embeddings(hashed_indices)
-            embedding = embedding.sum(1)
-            embedding = embedding.view(batch_size, seq_size, -1)
+        hashed_indices = self._get_hashed_indices(indices)
+        embedding = self.embeddings(hashed_indices)
+        embedding = embedding.sum(1)
+        embedding = embedding.view(batch_size, seq_size, -1)
 
         return embedding
 
@@ -235,5 +200,11 @@ class BloomEmbedding(nn.Module):
             return murmurhash3_32(x, seed=seed)
         elif hash_function == 'xxHash':
             return np.array([xxh32(i).intdigest() for i in x])
+        elif hash_function == 'MD5':
+            return np.array([int.from_bytes(md5(i).digest()[:4], 'little') for i in x])
+        elif hash_function == 'SHA1':
+            return np.array([int.from_bytes(sha1(i).digest()[:4], 'little') for i in x])
+        elif hash_function == 'SHA256':
+            return np.array([int.from_bytes(sha256(i).digest()[:4], 'little') for i in x])
 
         return None
