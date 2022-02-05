@@ -9,7 +9,7 @@ from model_utils.layers import ScaledEmbedding, ZeroEmbedding
 
 class Net(nn.Module):
     """
-    Bilinear factorization representation.
+    Network factorization representation.
 
     Encodes both users and items as an embedding layer; the score
     for a user-item pair is given by the dot product of the item

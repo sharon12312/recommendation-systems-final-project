@@ -7,24 +7,6 @@ import numpy as np
 import scipy.sparse as sp
 
 
-def _sliding_window(tensor, window_size, step_size=1):
-    for i in range(len(tensor), 0, -step_size):
-        yield tensor[max(i - window_size, 0):i]
-
-
-def _generate_sequences(user_ids, item_ids, indices, max_sequence_length, step_size):
-    for i in range(len(indices)):
-        start_idx = indices[i]
-
-        if i >= len(indices) - 1:
-            stop_idx = None
-        else:
-            stop_idx = indices[i + 1]
-
-        for seq in _sliding_window(item_ids[start_idx:stop_idx], max_sequence_length, step_size):
-            yield user_ids[i], seq
-
-
 class Interactions(object):
     """
     Interactions object. Contains (at a minimum) pair of user-item
@@ -108,11 +90,9 @@ class Interactions(object):
 
     def _check(self):
         if self.user_ids.max() >= self.num_users:
-            raise ValueError('Maximum user id greater '
-                             'than declared number of users.')
+            raise ValueError('Maximum user id greater than declared number of users.')
         if self.item_ids.max() >= self.num_items:
-            raise ValueError('Maximum item id greater '
-                             'than declared number of items.')
+            raise ValueError('Maximum item id greater than declared number of items.')
 
         num_interactions = len(self.user_ids)
 

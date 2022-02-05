@@ -185,30 +185,6 @@ def regression_loss(observed_ratings, predicted_ratings):
     return ((observed_ratings - predicted_ratings) ** 2).mean()
 
 
-def poisson_loss(observed_ratings, predicted_ratings):
-    """
-    Poisson loss.
-
-    Parameters
-    ----------
-
-    observed_ratings: tensor
-        Tensor containing observed ratings.
-    predicted_ratings: tensor
-        Tensor containing rating predictions.
-
-    Returns
-    -------
-
-    loss, float
-        The mean value of the loss function.
-    """
-
-    assert_no_grad(observed_ratings)
-
-    return (predicted_ratings - observed_ratings * torch.log(predicted_ratings)).mean()
-
-
 def logistic_loss(observed_ratings, predicted_ratings):
     """
     Logistic loss for explicit data.

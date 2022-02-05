@@ -9,7 +9,6 @@ import torch.nn as nn
 from sklearn.utils import murmurhash3_32
 from xxhash import xxh32
 
-
 SEEDS = [
     179424941, 179425457, 179425907, 179426369,
     179424977, 179425517, 179425943, 179426407,
@@ -144,8 +143,7 @@ class BloomEmbedding(nn.Module):
         self.num_embeddings = num_embeddings
         self.embedding_dim = embedding_dim
         self.compression_ratio = compression_ratio
-        self.compressed_num_embeddings = int(compression_ratio *
-                                             num_embeddings)
+        self.compressed_num_embeddings = int(compression_ratio * num_embeddings)
         self.num_hash_functions = num_hash_functions
         self.padding_idx = padding_idx
         self._bag = bag
@@ -168,7 +166,7 @@ class BloomEmbedding(nn.Module):
         self._offsets = None
 
         # Hash Function Declaration
-        self._hash_function = self._get_hash_function(hash_function)
+        self._hash_function = hash_function
 
     def __repr__(self):
         return f'<BloomEmbedding (compression_ratio: {self.compression_ratio}): {self.embeddings}>'
@@ -176,8 +174,8 @@ class BloomEmbedding(nn.Module):
     def _get_hashed_indices(self, original_indices):
 
         def _hash(x, seed):
-            # can use different hash functions
-            result = self._hash_function(x, seed=seed)
+            # The vector can be hashed using different hash functions
+            result = self._get_hashed_values(x, seed, self._hash_function)
             result[self.padding_idx] = 0
 
             return result % self.compressed_num_embeddings
@@ -232,10 +230,10 @@ class BloomEmbedding(nn.Module):
         return embedding
 
     @staticmethod
-    def _get_hash_function(hash_function):
+    def _get_hashed_values(x, seed, hash_function):
         if hash_function == 'MurmurHash':
-            return murmurhash3_32
+            return murmurhash3_32(x, seed=seed)
         elif hash_function == 'xxHash':
-            return xxh32
+            return np.array([xxh32(i).intdigest() for i in x])
 
         return None
