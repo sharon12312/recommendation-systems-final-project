@@ -9,6 +9,7 @@ dependencies:
   - jupyter
   - jupyterlab
   - matplotlib
+  - seaborn
   - networkx
   - nltk
   - numpy

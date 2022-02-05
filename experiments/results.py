@@ -24,6 +24,9 @@ class Results:
         results = sorted([x for x in self], key=lambda x: -x['test_mrr'])
         return results[0] if results else None
 
+    def get_filename(self):
+        return self._filename
+
     def __getitem__(self, hyperparams):
         params_hash = self._hash(hyperparams)
 

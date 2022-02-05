@@ -123,5 +123,5 @@ if __name__ == '__main__':
     train, rest = random_train_test_split(dataset, test_percentage=test_percentage, random_state=random_state)
     test, validation = random_train_test_split(rest, test_percentage=0.5, random_state=random_state)
 
-    experiment_name = 'Implicit Factorization Model'
+    experiment_name = 'implicit_movielens'
     run(experiment_name, train, test, validation, random_state)
