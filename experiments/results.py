@@ -1,3 +1,4 @@
+import os
 import hashlib
 import json
 
@@ -25,7 +26,7 @@ class Results:
         return results[0] if results else None
 
     def get_filename(self):
-        return self._filename
+        return os.path.basename(self._filename).split('_')[0]
 
     def __getitem__(self, hyperparams):
         params_hash = self._hash(hyperparams)

@@ -1,3 +1,4 @@
+import os
 import time
 import numpy as np
 
@@ -14,6 +15,10 @@ from model_utils.torch_utils import set_seed
 CUDA = False
 NUM_SAMPLES = 1
 
+# directories & filenames variables
+SAVE_PATH = '../results'
+SUFFIX_FILENAME = 'implicit_movielens_results.txt'
+
 # sampling these hyperparameters for the baseline process
 LEARNING_RATES = [1e-4, 5 * 1e-4, 1e-3, 1e-2, 5 * 1e-2, 1e-1]
 LOSSES = ['bpr', 'adaptive_hinge']
@@ -23,7 +28,7 @@ N_ITER = list(range(1, 4))
 L2 = [1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 0.0]
 
 # hyperparameters for this experiment
-COMPRESSION_RATIOS = (np.arange(1, 10) / 10).tolist()
+COMPRESSION_RATIOS = (np.arange(9, 10) / 10).tolist()
 HASH_FUNCTIONS = ['MurmurHash', 'xxHash', 'MD5', 'SHA1', 'SHA256']
 
 
@@ -74,9 +79,9 @@ def evaluate_model(model, train, test, validation):
 
 
 def run(experiment_name, hash_function, train, test, validation, random_state):
-    results = Results(f'{experiment_name}_results.txt')
-
+    results = Results(experiment_name)
     best_result = results.best()
+
     if best_result is not None:
         print(f'Best result: {best_result}')
 
@@ -131,5 +136,6 @@ if __name__ == '__main__':
     test, validation = random_train_test_split(rest, test_percentage=0.5, random_state=random_state)
 
     for hash_function in HASH_FUNCTIONS:
-        experiment_name = f'{hash_function}_implicit_movielens'
+        filename = f'{hash_function}_{SUFFIX_FILENAME}'
+        experiment_name = os.path.join(SAVE_PATH, filename)
         run(experiment_name, hash_function, train, test, validation, random_state)

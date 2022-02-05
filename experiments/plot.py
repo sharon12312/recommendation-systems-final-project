@@ -1,8 +1,11 @@
+import os
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
 from experiments.results import Results
+
+SAVE_PATH = '../results'
 
 
 def process_results(results, verbose=False):
@@ -45,7 +48,8 @@ def plot_results(model, results):
     plt.title("Compression ratio vs MRR ratio")
 
     plt.legend(loc='lower right')
-    plt.savefig('{}_plot.png'.format(model))
+    plt.savefig(os.path.join(SAVE_PATH, f'_{model}_plot.png'))
+
     plt.close()
 
     for result in results:
@@ -57,13 +61,15 @@ def plot_results(model, results):
     plt.title("Compression ratio vs time ratio")
     plt.legend(loc='lower right')
 
-    plt.savefig('{}_time.png'.format(model))
+    plt.savefig(os.path.join(SAVE_PATH, f'_{model}_time.png'))
     plt.close()
 
 
 if __name__ == '__main__':
     results = []
     for hash_function in ['MurmurHash', 'xxHash', 'MD5', 'SHA1', 'SHA256']:
-        results.append(Results(f'{hash_function}_implicit_movielens_results.txt'))
+        filename = f'{hash_function}_implicit_movielens_results.txt'
+        filename_path = os.path.join(SAVE_PATH, filename)
+        results.append(Results(filename_path))
 
     plot_results('MovieLens', results)
