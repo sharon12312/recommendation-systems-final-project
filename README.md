@@ -20,12 +20,13 @@ To alleviate this problem, we can use a smaller underlying embedding layer, and 
 * Zero or marginal space requirements.
 * Training time speedups.
 
+---
 ## Implementation
 This implementation uses embedding layers indexed by hashed indices. Vectors retrieved by each hash function are averaged together to yield the final embedding. \
-For hashing, we used different hash functions, and we performed hashing on the indices with a different seed, modulo the size of the compressed embedding layer. The hash mapping is computed once at the start of training and indexed into for every minibatch.
+For hashing, we used different hash functions such as: **MurmurHash, xxHash, MD5, SHA1, SHA256**, and we performed hashing on the indices with a different seed, modulo the size of the compressed embedding layer. The hash mapping is computed once at the start of training and indexed into for every minibatch.
 To exploit this sparsity structure, we simply skip zero entries in the input vector.
 
-
+---
 ## Installations
 * Install [miniconda](https://conda.io/miniconda.html) distribution of _python3_ using this [instruction](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html).
 * Add _conda_ to your bashrc:
@@ -38,6 +39,30 @@ echo "source $HOME/miniconda3/etc/profile.d/conda.sh" >> ~/.bashrc
 conda env update -f environment.yml      # create the virtual environemnt
 conda env list                           # make sure the environemnt was added
 conda activate recommandation-systems    # activate it
+```
+---
+## Running Example
+```python
+from datasets.movielens import get_movielens_dataset
+from evaluations.cross_validation import random_train_test_split
+from evaluations.evaluation import mrr_score
+from factorization.implicit import ImplicitFactorizationModel
+from model_utils.layers import BloomEmbedding
+from model_utils.networks import Net
+
+dataset = get_movielens_dataset(variant='100K')
+train, test = random_train_test_split(dataset)
+
+for hash_function in ('MurmurHash', 'xxHash', 'MD5', 'SHA1', 'SHA256'):
+    user_embeddings = BloomEmbedding(dataset.num_users, 32, compression_ratio=0.4, num_hash_functions=2, hash_function=hash_function)
+    item_embeddings = BloomEmbedding(dataset.num_items, 32, compression_ratio=0.4, num_hash_functions=2, hash_function=hash_function)
+
+    network = Net(dataset.num_users, dataset.num_items, user_embedding_layer=user_embeddings, item_embedding_layer=item_embeddings)
+    model = ImplicitFactorizationModel(n_iter=1, loss='bpr', batch_size=1024, learning_rate=1e-2, l2=1e-6, representation=network, use_cuda=False)
+    model.fit(train, verbose=True)
+
+    mrr = mrr_score(model, test)
+    print(f'MRR Score: {mrr.mean()}')
 ```
 
 ## Datasets
