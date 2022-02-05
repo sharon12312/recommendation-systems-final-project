@@ -9,9 +9,6 @@ models.
 """
 
 import torch
-import torch.nn.functional as F
-
-from model_utils.torch_utils import assert_no_grad
 
 
 def pointwise_loss(positive_predictions, negative_predictions, mask=None):
@@ -159,55 +156,3 @@ def adaptive_hinge_loss(positive_predictions, negative_predictions, mask=None):
     highest_negative_predictions, _ = torch.max(negative_predictions, 0)
 
     return hinge_loss(positive_predictions, highest_negative_predictions.squeeze(), mask=mask)
-
-
-def regression_loss(observed_ratings, predicted_ratings):
-    """
-    Regression loss.
-
-    Parameters
-    ----------
-
-    observed_ratings: tensor
-        Tensor containing observed ratings.
-    predicted_ratings: tensor
-        Tensor containing rating predictions.
-
-    Returns
-    -------
-
-    loss, float
-        The mean value of the loss function.
-    """
-
-    assert_no_grad(observed_ratings)
-
-    return ((observed_ratings - predicted_ratings) ** 2).mean()
-
-
-def logistic_loss(observed_ratings, predicted_ratings):
-    """
-    Logistic loss for explicit data.
-
-    Parameters
-    ----------
-
-    observed_ratings: tensor
-        Tensor containing observed ratings which
-        should be +1 or -1 for this loss function.
-    predicted_ratings: tensor
-        Tensor containing rating predictions.
-
-    Returns
-    -------
-
-    loss, float
-        The mean value of the loss function.
-    """
-
-    assert_no_grad(observed_ratings)
-
-    # Convert target classes from (-1, 1) to (0, 1)
-    observed_ratings = torch.clamp(observed_ratings, 0, 1)
-
-    return F.binary_cross_entropy_with_logits(predicted_ratings, observed_ratings, size_average=True)

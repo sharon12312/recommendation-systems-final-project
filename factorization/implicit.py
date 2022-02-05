@@ -82,7 +82,7 @@ class ImplicitFactorizationModel(object):
                  random_state=None,
                  num_negative_samples=5):
 
-        assert loss in ('pointwise', 'bpr', 'hinge', 'adaptive_hinge')
+        assert loss in ('pointwise', 'bpr', 'regression', 'logistic', 'hinge', 'adaptive_hinge')
 
         self._loss = loss
         self._embedding_dim = embedding_dim

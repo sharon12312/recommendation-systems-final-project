@@ -12,14 +12,19 @@ from model_utils.networks import Net
 from model_utils.torch_utils import set_seed
 
 CUDA = False
-NUM_SAMPLES = 2
-LEARNING_RATES = [1e-4, 5 * 1e-4]
+NUM_SAMPLES = 1
+
+# sampling these hyperparameters for the baseline process
+LEARNING_RATES = [1e-4, 5 * 1e-4, 1e-3, 1e-2, 5 * 1e-2, 1e-1]
 LOSSES = ['bpr', 'adaptive_hinge']
-BATCH_SIZE = [128, 256]
-EMBEDDING_DIM = [32, 64]
-N_ITER = [1, 2]
-L2 = [1e-6, 1e-5]
-COMPRESSION_RATIOS = [0.2, 0.4]
+BATCH_SIZE = [16, 32, 64, 128, 256, 512]
+EMBEDDING_DIM = [32, 64, 128, 256]
+N_ITER = list(range(1, 4))
+L2 = [1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 0.0]
+
+# hyperparameters for this experiment
+COMPRESSION_RATIOS = (np.arange(1, 10) / 10).tolist()
+HASH_FUNCTIONS = ['MurmurHash', 'xxHash', 'MD5', 'SHA1', 'SHA256']
 
 
 def set_hyperparameters(random_state, num):
@@ -42,8 +47,8 @@ def build_factorization_model(hyperparameters, train, random_state):
     set_seed(42, CUDA)
 
     if h['compression_ratio'] < 1.0:
-        item_embeddings = BloomEmbedding(train.num_items, h['embedding_dim'], compression_ratio=h['compression_ratio'], num_hash_functions=4, padding_idx=0)
-        user_embeddings = BloomEmbedding(train.num_users, h['embedding_dim'], compression_ratio=h['compression_ratio'], num_hash_functions=4, padding_idx=0)
+        item_embeddings = BloomEmbedding(train.num_items, h['embedding_dim'], compression_ratio=h['compression_ratio'], num_hash_functions=4, padding_idx=0, hash_function=hyperparameters['hash_function'])
+        user_embeddings = BloomEmbedding(train.num_users, h['embedding_dim'], compression_ratio=h['compression_ratio'], num_hash_functions=4, padding_idx=0, hash_function=hyperparameters['hash_function'])
     else:
         item_embeddings = ScaledEmbedding(train.num_items, h['embedding_dim'], padding_idx=0)
         user_embeddings = ScaledEmbedding(train.num_users, h['embedding_dim'], padding_idx=0)
@@ -68,7 +73,7 @@ def evaluate_model(model, train, test, validation):
     return test_mrr, val_mrr, elapsed
 
 
-def run(experiment_name, train, test, validation, random_state):
+def run(experiment_name, hash_function, train, test, validation, random_state):
     results = Results(f'{experiment_name}_results.txt')
 
     best_result = results.best()
@@ -79,6 +84,7 @@ def run(experiment_name, train, test, validation, random_state):
     for hyperparameters in set_hyperparameters(random_state, NUM_SAMPLES):
         hyperparameters['batch_size'] = hyperparameters['batch_size'] * 4
         hyperparameters['compression_ratio'] = 1.0
+        hyperparameters['hash_function'] = ''
 
         if hyperparameters in results:
             print('Done, skipping...')
@@ -99,6 +105,7 @@ def run(experiment_name, train, test, validation, random_state):
     for compression_ratio in COMPRESSION_RATIOS:
         hyperparameters = best_baseline
         hyperparameters['compression_ratio'] = compression_ratio
+        hyperparameters['hash_function'] = hash_function
 
         if hyperparameters in results:
             print('Compression computed')
@@ -123,5 +130,6 @@ if __name__ == '__main__':
     train, rest = random_train_test_split(dataset, test_percentage=test_percentage, random_state=random_state)
     test, validation = random_train_test_split(rest, test_percentage=0.5, random_state=random_state)
 
-    experiment_name = 'implicit_movielens'
-    run(experiment_name, train, test, validation, random_state)
+    for hash_function in HASH_FUNCTIONS:
+        experiment_name = f'{hash_function}_implicit_movielens'
+        run(experiment_name, hash_function, train, test, validation, random_state)

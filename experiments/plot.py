@@ -37,7 +37,6 @@ def plot_results(model, results):
     sns.set_style("darkgrid")
 
     for result in results:
-        print(f'Dataset: {model}')
         compression_ratio, mrr, elapsed = process_results(result, verbose=True)
         plt.plot(compression_ratio, mrr, label=result.get_filename())
 
@@ -63,6 +62,8 @@ def plot_results(model, results):
 
 
 if __name__ == '__main__':
-    results = [Results('implicit_movielens1_results.txt'),
-               Results('implicit_movielens2_results.txt')]
+    results = []
+    for hash_function in ['MurmurHash', 'xxHash', 'MD5', 'SHA1', 'SHA256']:
+        results.append(Results(f'{hash_function}_implicit_movielens_results.txt'))
+
     plot_results('MovieLens', results)
