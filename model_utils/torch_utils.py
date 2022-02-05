@@ -40,12 +40,6 @@ def shuffle(*arrays, **kwargs):
         return tuple(x[shuffle_indices] for x in arrays)
 
 
-def assert_no_grad(variable):
-    if variable.requires_grad:
-        raise ValueError("nn criterion does not compute the gradient w.r.t. targets - please mark these variables as "
-                         "volatile or not requiring gradients")
-
-
 def set_seed(seed, cuda=False):
     torch.manual_seed(seed)
 

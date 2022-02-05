@@ -27,20 +27,7 @@ def _get_movielens(dataset, extension='.hdf5'):
 
 def get_movielens_dataset(variant='100K'):
     """
-    Download and return one of the Movielens datasets.
-
-    Parameters
-    ----------
-
-    variant: string, optional
-         String specifying which of the Movielens datasets
-         to download. One of ('100K', '1M', '10M', '20M').
-
-    Returns
-    -------
-
-    Interactions: :class:`spotlight.interactions.Interactions`
-        instance of the interactions class
+    Download and return one of the Movielens datasets ('100K', '1M', '10M').
     """
 
     if variant not in VARIANTS:

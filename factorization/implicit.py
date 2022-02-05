@@ -1,5 +1,5 @@
 """
-Factorization models for implicit feedback problems.
+Factorization models for implicit ratings.
 """
 
 import numpy as np
@@ -16,56 +16,16 @@ from model_utils.torch_utils import cpu, gpu, minibatch, set_seed, shuffle
 
 class ImplicitFactorizationModel(object):
     """
-    An implicit feedback matrix factorization model. Uses a classic
-    matrix factorization [1]_ approach, with latent vectors used
-    to represent both users and items. Their dot product gives the
-    predicted score for a user-item pair.
+    An implicit feedback matrix factorization model.
+    Uses a classic matrix factorization [1]_ approach, with latent vectors used to represent both users and items.
+    Their dot product gives the predicted score for a user-item pair.
 
-    The latent representation is given by
-    :class:`spotlight.factorization.representations.BilinearNet`.
-
-    The model is trained through negative sampling: for any known
-    user-item pair, one or more items are randomly sampled to act
-    as negatives (expressing a lack of preference by the user for
-    the sampled item).
+    The model is trained through negative sampling: for any known user-item pair,
+    one or more items are randomly sampled to act as negatives.
 
     .. [1] Koren, Yehuda, Robert Bell, and Chris Volinsky.
        "Matrix factorization techniques for recommender systems."
        Computer 42.8 (2009).
-
-    Parameters
-    ----------
-
-    loss: string, optional
-        One of 'pointwise', 'bpr', 'hinge', or 'adaptive hinge',
-        corresponding to losses from :class:`spotlight.losses`.
-    embedding_dim: int, optional
-        Number of embedding dimensions to use for users and items.
-    n_iter: int, optional
-        Number of iterations to run.
-    batch_size: int, optional
-        Minibatch size.
-    l2: float, optional
-        L2 loss penalty.
-    learning_rate: float, optional
-        Initial learning rate.
-    optimizer_func: function, optional
-        Function that takes in module parameters as the first argument and
-        returns an instance of a PyTorch optimizer. Overrides l2 and learning
-        rate if supplied. If no optimizer supplied, then use ADAM by default.
-    use_cuda: boolean, optional
-        Run the model on a GPU.
-    representation: a representation module, optional
-        If supplied, will override default settings and be used as the
-        main network module in the model. Intended to be used as an escape
-        hatch when you want to reuse the model's training functions but
-        want full freedom to specify your network topology.
-    sparse: boolean, optional
-        Use sparse gradients for embedding layers.
-    random_state: instance of numpy.random.RandomState, optional
-        Random state to use when fitting.
-    num_negative_samples: int, optional
-        Number of negative samples to generate for adaptive hinge loss.
     """
 
     def __init__(self,
@@ -165,19 +125,6 @@ class ImplicitFactorizationModel(object):
     def fit(self, interactions, verbose=False):
         """
         Fit the model.
-
-        When called repeatedly, model fitting will resume from
-        the point at which training stopped in the previous fit
-        call.
-
-        Parameters
-        ----------
-
-        interactions: :class:`spotlight.interactions.Interactions`
-            The input dataset.
-
-        verbose: bool
-            Output additional information about current epoch and loss.
         """
 
         user_ids = interactions.user_ids.astype(np.int64)
@@ -235,27 +182,7 @@ class ImplicitFactorizationModel(object):
 
     def predict(self, user_ids, item_ids=None):
         """
-        Make predictions: given a user id, compute the recommendation
-        scores for items.
-
-        Parameters
-        ----------
-
-        user_ids: int or array
-           If int, will predict the recommendation scores for this
-           user for all items in item_ids. If an array, will predict
-           scores for all (user, item) pairs defined by user_ids and
-           item_ids.
-        item_ids: array, optional
-            Array containing the item ids for which prediction scores
-            are desired. If not supplied, predictions for all items
-            will be computed.
-
-        Returns
-        -------
-
-        predictions: np.array
-            Predicted scores for all items in item_ids.
+        Make predictions: given a user id, compute the recommendation scores for items.
         """
 
         self._check_input(user_ids, item_ids, allow_items_none=True)
