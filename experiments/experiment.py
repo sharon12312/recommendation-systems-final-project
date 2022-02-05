@@ -13,22 +13,18 @@ from model_utils.networks import Net
 from model_utils.torch_utils import set_seed
 
 CUDA = False
-NUM_SAMPLES = 1
-
-# directories & filenames variables
-SAVE_PATH = '../results'
-SUFFIX_FILENAME = 'implicit_movielens_results.txt'
+NUM_SAMPLES = 20
 
 # sampling these hyperparameters for the baseline process
 LEARNING_RATES = [1e-4, 5 * 1e-4, 1e-3, 1e-2, 5 * 1e-2, 1e-1]
 LOSSES = ['bpr', 'adaptive_hinge']
-BATCH_SIZE = [16, 32, 64, 128, 256, 512]
+BATCH_SIZE = [32, 64, 128, 256, 512]
 EMBEDDING_DIM = [32, 64, 128, 256]
-N_ITER = list(range(1, 4))
+N_ITER = list(range(1, 20))
 L2 = [1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 0.0]
 
 # hyperparameters for this experiment
-COMPRESSION_RATIOS = (np.arange(9, 10) / 10).tolist()
+COMPRESSION_RATIOS = (np.arange(1, 10) / 10).tolist()
 HASH_FUNCTIONS = ['MurmurHash', 'xxHash', 'MD5', 'SHA1', 'SHA256']
 
 
@@ -127,15 +123,19 @@ def run(experiment_name, hash_function, train, test, validation, random_state):
     return results
 
 
-if __name__ == '__main__':
+def run_experiment(variant='100K', save_path='../results'):
     random_state = np.random.RandomState(100)
-    dataset = get_movielens_dataset('100K')
+    dataset = get_movielens_dataset(variant)
     test_percentage = 0.2
 
     train, rest = random_train_test_split(dataset, test_percentage=test_percentage, random_state=random_state)
     test, validation = random_train_test_split(rest, test_percentage=0.5, random_state=random_state)
 
     for hash_function in HASH_FUNCTIONS:
-        filename = f'{hash_function}_{SUFFIX_FILENAME}'
-        experiment_name = os.path.join(SAVE_PATH, filename)
+        filename = f'{hash_function}_implicit_movielens_results.txt'
+        experiment_name = os.path.join(save_path, filename)
         run(experiment_name, hash_function, train, test, validation, random_state)
+
+
+if __name__ == '__main__':
+    run_experiment()
