@@ -23,3 +23,6 @@ tags
 
 # MovieLens data directory
 **/data/*
+
+# VS Code
+.vscode/
