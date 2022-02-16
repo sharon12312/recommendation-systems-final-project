@@ -71,7 +71,9 @@ def precision_recall_score(model, test, train=None, k=10):
 
         predictions = predictions.argsort()
         targets = row.indices
-        user_precision, user_recall = zip(*[_get_precision_recall(predictions, targets, x) for x in k])
+        user_precision, user_recall = zip(
+            *[_get_precision_recall(predictions, targets, x) for x in k]
+        )
 
         precision.append(user_precision)
         recall.append(user_recall)
@@ -87,6 +89,5 @@ def rmse_score(model, test):
     Compute RMSE score for test interactions.
     """
 
-    predictions = model.predict(test.user_ids, test.item_ids)
-
+    predictions = np.clip(model.predict(test.user_ids, test.item_ids), 1, 5)
     return np.sqrt(((test.ratings - predictions) ** 2).mean())

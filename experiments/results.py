@@ -6,7 +6,7 @@ import json
 class Results:
     def __init__(self, filename):
         self._filename = filename
-        if not os.path.exists(filename):
+        if not os.path.exists(os.path.dirname(filename)):
             os.makedirs(os.path.dirname(filename))
         open(self._filename, "a+")
 
