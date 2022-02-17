@@ -13,22 +13,16 @@ from model_utils.networks import Net
 from model_utils.torch_utils import set_seed
 
 CUDA = False
-NUM_SAMPLES = 2
+NUM_SAMPLES = 20
 
 # sampling these hyperparameters for the baseline process
-# LEARNING_RATES = [1e-4, 5 * 1e-4, 1e-3, 1e-2, 5 * 1e-2, 1e-1]
-# LOSSES = ["bpr", "adaptive_hinge"]
-# BATCH_SIZE = [32, 64, 128, 256, 512]
-# EMBEDDING_DIM = [32, 64, 128, 256]
-# N_ITER = list(range(1, 20))
-# L2 = [1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 0.0]
+LEARNING_RATES = [1e-4, 5 * 1e-4, 1e-3, 1e-2, 5 * 1e-2, 1e-1]
+LOSSES = ["bpr", "adaptive_hinge"]
+BATCH_SIZE = [32, 64, 128, 256, 512]
+EMBEDDING_DIM = [32, 64, 128, 256]
+N_ITER = list(range(1, 20))
+L2 = [1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 0.0]
 
-LEARNING_RATES = [1e-4, 5 * 1e-4, 1e-3]
-LOSSES = ["adaptive_hinge"]
-BATCH_SIZE = [32, 64, 128]
-EMBEDDING_DIM = [64, 128]
-N_ITER = list(range(5, 6))
-L2 = [1e-6, 1e-5, 1e-4]
 
 # hyperparameters for this experiment
 COMPRESSION_RATIOS = (np.arange(1, 10) / 10).tolist()

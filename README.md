@@ -23,7 +23,7 @@ To alleviate this problem, we can use a smaller underlying embedding layer, and 
 ---
 ## Implementation
 This implementation uses embedding layers indexed by hashed indices. Vectors retrieved by each hash function are averaged together to yield the final embedding. \
-For hashing, we used different hash functions such as: **MurmurHash, xxHash, MD5, SHA1, SHA256**, and we performed hashing on the indices with a different seed, modulo the size of the compressed embedding layer. The hash mapping is computed once at the start of training and indexed into for every minibatch.
+For hashing, we used different hash functions such as: **MurmurHash, xxHash, MD5, SHA1, SHA256, MetroHash & FarmHash**, and we performed hashing on the indices with a different seed, modulo the size of the compressed embedding layer. The hash mapping is computed once at the start of training and indexed into for every minibatch.
 To exploit this sparsity structure, we simply skip zero entries in the input vector.
 
 ---
