@@ -8,7 +8,8 @@ class Results:
         self._filename = filename
         if not os.path.exists(os.path.dirname(filename)):
             os.makedirs(os.path.dirname(filename))
-        open(self._filename, "a+")
+        f = open(self._filename, "a+")
+        f.close()
 
     def save(
         self, hyperparams, test_mrr, validation_mrr, test_rmse, validation_rmse, elapsed

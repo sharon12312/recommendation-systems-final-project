@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 from experiments.results import Results
+from model_utils.layers import HASH_FUNCTIONS
 
 SMALL_SIZE = 18
 MEDIUM_SIZE = 20
@@ -19,24 +20,24 @@ plt.rc("legend", fontsize=SMALL_SIZE)  # legend fontsize
 plt.rc("figure", titlesize=BIGGER_SIZE)  # fontsize of the figure title
 
 
+def like_baseline(baseline, x):
+    for key in (
+        "n_iter",
+        "batch_size",
+        "l2",
+        "learning_rate",
+        "loss",
+        "embedding_dim",
+    ):
+        if x[key] != baseline[key]:
+            return False
+
+    return True
+
+
 def process_results(results, verbose=False):
     baseline = results.best_baseline()
-
-    def like_baseline(x):
-        for key in (
-            "n_iter",
-            "batch_size",
-            "l2",
-            "learning_rate",
-            "loss",
-            "embedding_dim",
-        ):
-            if x[key] != baseline[key]:
-                return False
-
-        return True
-
-    data = pd.DataFrame([x for x in results if like_baseline(x)])
+    data = pd.DataFrame([x for x in results if like_baseline(baseline, x)])
     best = (
         data.sort_values("test_mrr", ascending=False)
         .groupby("compression_ratio", as_index=False)
@@ -57,7 +58,7 @@ def process_results(results, verbose=False):
     rmse = best["validation_rmse"].values / baseline_rmse
     elapsed = best["elapsed"].values / baseline_time
 
-    return compression_ratio[:-1], mrr[:-1], rmse[:-1], elapsed[:-1]
+    return compression_ratio, mrr, rmse, elapsed
 
 
 def create_compression_plot(results, param, name, save_path):
@@ -78,7 +79,7 @@ def create_compression_plot(results, param, name, save_path):
     plt.ylabel(f"{label_prompt[param]} ratio to baseline")
     plt.xlabel("Compression ratio")
     plt.title(f"Compression ratio vs {label_prompt[param]} ratio")
-
+    plt.gca().invert_xaxis()
     plt.legend(loc="lower right")
     plt.savefig(os.path.join(save_path, f"_{name}_{param}_plot.png"))
 
@@ -89,13 +90,13 @@ def plot_results(model, results, save_path):
     sns.set_style("darkgrid")
     create_compression_plot(results, "mrr", model, save_path)
     create_compression_plot(results, "rmse", model, save_path)
-    create_compression_plot(results, "elapsed", model, save_path)
+    create_compression_plot(results, "time", model, save_path)
 
 
 # %%
 def plot_experiment_results(save_path="../results"):
     results = []
-    for hash_function in ["MurmurHash", "xxHash", "MD5", "SHA1", "SHA256"]:
+    for hash_function in HASH_FUNCTIONS:
         filename = f"{hash_function}_implicit_movielens_results.txt"
         filename_path = os.path.join(save_path, filename)
         results.append(Results(filename_path))

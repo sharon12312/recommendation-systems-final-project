@@ -8,24 +8,30 @@ from evaluations.cross_validation import random_train_test_split
 from evaluations.evaluation import mrr_score, rmse_score
 from experiments.results import Results
 from factorization.implicit import ImplicitFactorizationModel
-from model_utils.layers import BloomEmbedding, ScaledEmbedding
+from model_utils.layers import BloomEmbedding, ScaledEmbedding, HASH_FUNCTIONS
 from model_utils.networks import Net
 from model_utils.torch_utils import set_seed
 
 CUDA = False
-NUM_SAMPLES = 20
+NUM_SAMPLES = 2
 
 # sampling these hyperparameters for the baseline process
-LEARNING_RATES = [1e-4, 5 * 1e-4, 1e-3, 1e-2, 5 * 1e-2, 1e-1]
-LOSSES = ["bpr", "adaptive_hinge"]
-BATCH_SIZE = [32, 64, 128, 256, 512]
-EMBEDDING_DIM = [32, 64, 128, 256]
-N_ITER = list(range(1, 20))
-L2 = [1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 0.0]
+# LEARNING_RATES = [1e-4, 5 * 1e-4, 1e-3, 1e-2, 5 * 1e-2, 1e-1]
+# LOSSES = ["bpr", "adaptive_hinge"]
+# BATCH_SIZE = [32, 64, 128, 256, 512]
+# EMBEDDING_DIM = [32, 64, 128, 256]
+# N_ITER = list(range(1, 20))
+# L2 = [1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 0.0]
+
+LEARNING_RATES = [1e-4, 5 * 1e-4, 1e-3]
+LOSSES = ["adaptive_hinge"]
+BATCH_SIZE = [32, 64, 128]
+EMBEDDING_DIM = [64, 128]
+N_ITER = list(range(5, 6))
+L2 = [1e-6, 1e-5, 1e-4]
 
 # hyperparameters for this experiment
 COMPRESSION_RATIOS = (np.arange(1, 10) / 10).tolist()
-HASH_FUNCTIONS = ["MurmurHash", "xxHash", "MD5", "SHA1", "SHA256"]
 
 
 def set_hyperparameters(random_state, num):
@@ -109,23 +115,24 @@ def evaluate_model(model, train, test, validation):
 
 def run(experiment_name, hash_function, train, test, validation, random_state):
     print(f"Running experiment {experiment_name}....")
-    results = Results(experiment_name)
-    best_result = results.best()
+    baseline_path = os.path.join(os.path.dirname(experiment_name), "baseline.txt")
+    baseline_results = Results(baseline_path)
+    best_result = baseline_results.best()
 
     if best_result is not None:
         print(f"Best result: {best_result}")
 
     # Find a good baseline
-    for hyperparameters in set_hyperparameters(random_state, NUM_SAMPLES):
+    for i, hyperparameters in enumerate(set_hyperparameters(random_state, NUM_SAMPLES)):
         hyperparameters["batch_size"] = hyperparameters["batch_size"] * 4
         hyperparameters["compression_ratio"] = 1.0
         hyperparameters["hash_function"] = ""
 
-        if hyperparameters in results:
+        if hyperparameters in baseline_results:
             print("Done, skipping...")
             continue
 
-        print(f"==> Hyperparameters: {hyperparameters}")
+        print(f"==> [{i+1}/{NUM_SAMPLES}] Hyperparameters: {hyperparameters}")
         model = build_factorization_model(hyperparameters, train, random_state)
         test_mrr, val_mrr, test_rmse, val_rmse, elapsed = evaluate_model(
             model, train, test, validation
@@ -138,7 +145,7 @@ def run(experiment_name, hash_function, train, test, validation, random_state):
                 Validation RMSE: {val_rmse},\
                 Elapsed Time: {elapsed}"
         )
-        results.save(
+        baseline_results.save(
             hyperparameters,
             test_mrr.mean(),
             val_mrr.mean(),
@@ -147,13 +154,28 @@ def run(experiment_name, hash_function, train, test, validation, random_state):
             elapsed,
         )
 
-    best_baseline = results.best_baseline()
+    best_baseline = baseline_results.best_baseline()
     print(f"Best baseline: {best_baseline}")
     print("*" * 200)
 
+    results = Results(experiment_name)
+    hyperparameters = best_baseline.copy()
+    del hyperparameters["test_mrr"]
+    del hyperparameters["validation_mrr"]
+    del hyperparameters["test_rmse"]
+    del hyperparameters["validation_rmse"]
+    del hyperparameters["elapsed"]
+    if hyperparameters not in results:
+        results.save(
+            hyperparameters,
+            best_baseline["test_mrr"],
+            best_baseline["validation_mrr"],
+            np.float32(best_baseline["test_rmse"]),
+            np.float32(best_baseline["validation_rmse"]),
+            best_baseline["elapsed"],
+        )
     # Compute compression results
     for compression_ratio in COMPRESSION_RATIOS:
-        hyperparameters = best_baseline
         hyperparameters["compression_ratio"] = compression_ratio
         hyperparameters["hash_function"] = hash_function
 
@@ -188,6 +210,7 @@ def run(experiment_name, hash_function, train, test, validation, random_state):
 
 
 def run_experiment(variant="100K", save_path="../results"):
+    np.random.seed(42)
     random_state = np.random.RandomState(100)
     dataset = get_movielens_dataset(variant)
     test_percentage = 0.2

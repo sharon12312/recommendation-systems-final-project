@@ -89,5 +89,5 @@ def rmse_score(model, test):
     Compute RMSE score for test interactions.
     """
 
-    predictions = np.clip(model.predict(test.user_ids, test.item_ids), 1, 5)
+    predictions = np.clip(model.predict(test.user_ids, test.item_ids), 0, 1)
     return np.sqrt(((test.ratings - predictions) ** 2).mean())
