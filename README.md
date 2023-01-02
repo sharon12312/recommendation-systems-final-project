@@ -1,4 +1,4 @@
-# Recommendation Systems -  Final Project
+# Recommendation Systems -  Final Project 
 
 ## Getting Started
 **Recommendation algorithms** tend to have large input and output dimensionalities that dominate their overall size.
